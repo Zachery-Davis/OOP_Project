@@ -1,0 +1,121 @@
+[ {
+  "name" : "Vegetable Stir Fry",
+  "cookingTime" : 20,
+  "steps" : "1. Chop veggies\n2. Stir-fry with sauce\n3. Serve with rice",
+  "servingSize" : 3,
+  "ingredients" : [ {
+    "name" : "Bell Pepper",
+    "quantity" : 100.0,
+    "unit" : "g"
+  }, {
+    "name" : "Carrot",
+    "quantity" : 100.0,
+    "unit" : "g"
+  }, {
+    "name" : "Soy Sauce",
+    "quantity" : 50.0,
+    "unit" : "ml"
+  } ]
+}, {
+  "name" : "Chicken Caesar Salad",
+  "cookingTime" : 15,
+  "steps" : "1. Grill chicken\n2. Toss salad with dressing\n3. Add croutons and chicken",
+  "servingSize" : 2,
+  "ingredients" : [ {
+    "name" : "Chicken Breast",
+    "quantity" : 150.0,
+    "unit" : "g"
+  }, {
+    "name" : "Romaine Lettuce",
+    "quantity" : 100.0,
+    "unit" : "g"
+  }, {
+    "name" : "Caesar Dressing",
+    "quantity" : 50.0,
+    "unit" : "ml"
+  }, {
+    "name" : "Croutons",
+    "quantity" : 30.0,
+    "unit" : "g"
+  } ]
+}, {
+  "name" : "Beef Tacos",
+  "cookingTime" : 25,
+  "steps" : "1. Cook beef with spices\n2. Prepare toppings\n3. Assemble tacos",
+  "servingSize" : 4,
+  "ingredients" : [ {
+    "name" : "Ground Beef",
+    "quantity" : 200.0,
+    "unit" : "g"
+  }, {
+    "name" : "Taco Shells",
+    "quantity" : 8.0,
+    "unit" : "pieces"
+  }, {
+    "name" : "Lettuce",
+    "quantity" : 50.0,
+    "unit" : "g"
+  }, {
+    "name" : "Cheddar Cheese",
+    "quantity" : 50.0,
+    "unit" : "g"
+  } ]
+}, {
+  "name" : "Vegetarian Chili",
+  "cookingTime" : 40,
+  "steps" : "1. Sauté vegetables\n2. Add beans and spices\n3. Simmer until thickened",
+  "servingSize" : 4,
+  "ingredients" : [ {
+    "name" : "Kidney Beans",
+    "quantity" : 400.0,
+    "unit" : "g"
+  }, {
+    "name" : "Tomatoes",
+    "quantity" : 300.0,
+    "unit" : "g"
+  }, {
+    "name" : "Onion",
+    "quantity" : 100.0,
+    "unit" : "g"
+  }, {
+    "name" : "Chili Powder",
+    "quantity" : 10.0,
+    "unit" : "g"
+  } ]
+}, {
+  "name" : "Grilled Salmon",
+  "cookingTime" : 25,
+  "steps" : "1. Marinate salmon\n2. Grill until cooked\n3. Serve with lemon",
+  "servingSize" : 2,
+  "ingredients" : [ {
+    "name" : "Salmon Fillet",
+    "quantity" : 300.0,
+    "unit" : "g"
+  }, {
+    "name" : "Olive Oil",
+    "quantity" : 20.0,
+    "unit" : "ml"
+  }, {
+    "name" : "Lemon",
+    "quantity" : 1.0,
+    "unit" : "piece"
+  } ]
+}, {
+  "name" : "Spaghetti Bolognese",
+  "cookingTime" : 30,
+  "steps" : "1. Boil pasta\n2. Cook sauce\n3. Mix together",
+  "servingSize" : 4,
+  "ingredients" : [ {
+    "name" : "Spaghetti",
+    "quantity" : 200.0,
+    "unit" : "g"
+  }, {
+    "name" : "Ground Beef",
+    "quantity" : 100.0,
+    "unit" : "g"
+  }, {
+    "name" : "Tomato Sauce",
+    "quantity" : 150.0,
+    "unit" : "ml"
+  } ]
+} ]
