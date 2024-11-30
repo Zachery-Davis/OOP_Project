@@ -1,5 +1,4 @@
 package com.mealmate;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Recipe {

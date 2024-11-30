@@ -11,6 +11,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,23 +33,22 @@ import javax.swing.event.DocumentListener;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class MainGUI {
+public class RecipeGUI {
     private JFrame frame;
-    private DefaultListModel<Recipe> recipeListModel;
-    private JList<Recipe> recipeList;
+    private HashMap<String, Recipe> recipeMap;
     private List<Recipe> defaultRecipes;
     private JList<String> recipeNameList;
     private DefaultListModel<String> recipeNamesListModel;
     private JTextArea recipeDetailsArea;
 
-    public MainGUI() {
+    public RecipeGUI(RecipeSelectionListener listener) {
         frame = new JFrame("Meal Prepping System");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setLayout(new BorderLayout());
 
         // Load recipes when the program starts
-        recipeListModel = new DefaultListModel<>();
+        recipeMap = new HashMap<>();
         loadRecipesFromFile();
 
         // Setup Panels
@@ -62,14 +62,17 @@ public class MainGUI {
 
         // Control Panel
         JPanel controlPanel = new JPanel();
+        JButton selectRecipeButton = new JButton("Select Recipe");
         JButton addRecipeButton = new JButton("Add Recipe");
         JButton editRecipeButton = new JButton("Edit Recipe");
         JButton deleteRecipeButton = new JButton("Delete Recipe");
 
+        selectRecipeButton.addActionListener(e -> selectRecipe(listener));
         addRecipeButton.addActionListener(e -> addRecipe());
         editRecipeButton.addActionListener(e -> editRecipe());
         deleteRecipeButton.addActionListener(e -> deleteRecipe());
 
+        controlPanel.add(selectRecipeButton);
         controlPanel.add(addRecipeButton);
         controlPanel.add(editRecipeButton);
         controlPanel.add(deleteRecipeButton);
@@ -86,26 +89,34 @@ public class MainGUI {
         frame.setVisible(true);
     }
 
+    private void selectRecipe(RecipeSelectionListener listener){
+        String selectedName = recipeNameList.getSelectedValue();
+        if (selectedName != null) {
+            Recipe selectedRecipe = recipeMap.get(selectedName);
+            listener.onRecipeSelected(selectedRecipe);
+            frame.dispose();
+        } else {
+            JOptionPane.showMessageDialog(frame, "Select a meal first.");
+        }
+    }
+
     private void addRecipe() {
         Recipe recipe = getRecipeFromUser();
         if (recipe != null) {
-            // Add to recipe list model
-            recipeListModel.addElement(recipe);
-            
-            // Add to recipe names list
-            recipeNamesListModel.addElement(recipe.getName());
+            String recipeName = recipe.getName();
+            recipeMap.put(recipeName, recipe);
+            recipeNamesListModel.addElement(recipeName);
         }
     }
 
     private void editRecipe() {
-        Recipe selectedRecipe = recipeList.getSelectedValue();
-        if (selectedRecipe == null) {
+        String selectedName = recipeNameList.getSelectedValue();
+        if (selectedName == null) {
             JOptionPane.showMessageDialog(frame, "Please select a recipe to edit.");
             return;
         }
 
-        // Get the index of the selected recipe
-        int selectedIndex = recipeList.getSelectedIndex();
+        Recipe selectedRecipe = recipeMap.get(selectedName);
     
         // Pre-fill input fields with the selected recipe's details
         JTextField nameField = new JTextField(selectedRecipe.getName());
@@ -159,15 +170,11 @@ public class MainGUI {
                 selectedRecipe.setServingSize(servingSize);
                 selectedRecipe.setIngredients(ingredients);
 
-                // Update the recipe in the list models
-                recipeListModel.setElementAt(selectedRecipe, selectedIndex);
-                
-                // Update the recipe name in the names list
-                recipeNamesListModel.setElementAt(selectedRecipe.getName(), selectedIndex);
-
-                // Update the details panel with the edited recipe
-                displayRecipeDetails(selectedRecipe);
-
+                if (selectedRecipe != null) {
+                    // Logic for editing remains the same
+                    recipeMap.put(selectedRecipe.getName(), selectedRecipe);
+                    displayRecipeDetails(selectedRecipe);
+                }
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(frame, 
                     "Error processing recipe: " + e.getMessage(), 
@@ -195,14 +202,10 @@ public class MainGUI {
     }
     
     private void deleteRecipe() {
-        int index = recipeList.getSelectedIndex();
-        if (index != -1) {
-            // Remove from recipe list model
-            recipeListModel.remove(index);
-            
-            // Remove from recipe names list
-            recipeNamesListModel.remove(index);
-
+        String selectedName = recipeNameList.getSelectedValue();
+        if (selectedName != null) {
+            recipeMap.remove(selectedName);
+            recipeNamesListModel.removeElement(selectedName);
             recipeDetailsArea.setText("");
         } else {
             JOptionPane.showMessageDialog(frame, "Please select a recipe to delete.");
@@ -276,10 +279,8 @@ public class MainGUI {
                     }
 
                     // Check if a recipe with the same name already exists
-                    for (int i = 0; i < recipeListModel.getSize(); i++) {
-                        if (recipeListModel.getElementAt(i).getName().equalsIgnoreCase(nameInput)) {
-                            throw new IllegalArgumentException(nameInput + " already exists.");
-                        }
+                    if (recipeMap.containsKey(nameInput)) {
+                        throw new IllegalArgumentException(nameInput + " already exists.");
                     }
     
                     int cookingTime = Integer.parseInt(timeInput);
@@ -303,12 +304,12 @@ public class MainGUI {
     }
 
     private void saveRecipesToFile() {
-        Object data = recipeListModel.toArray();
+        List<Recipe> data = new ArrayList<>(recipeMap.values());
         String filename = "data/recipes.json";
         try {
             ensureDataDirectoryExists();
             File file = new File(filename);
-            
+
             ObjectMapper mapper = new ObjectMapper();
             mapper.writerWithDefaultPrettyPrinter().writeValue(file, data);
 
@@ -357,46 +358,39 @@ public class MainGUI {
         return Collections.emptyList();
     }
     
-    
     private void loadRecipesFromFile() {
         List<Recipe> recipes = loadJsonFile("data/recipes.json", new TypeReference<List<Recipe>>() {});
-        recipeListModel.clear();
-        recipes.forEach(recipeListModel::addElement);
+        for (Recipe recipe : recipes) {
+            recipeMap.put(recipe.getName(), recipe);
+        }
     }
 
     private void loadDefaultRecipes() {
         defaultRecipes = loadJsonFile("data/defaultRecipes.json", new TypeReference<List<Recipe>>() {});
     }
 
+    private void updateRecipeNameList() {
+        recipeNamesListModel.clear();
+        recipeMap.keySet().forEach(recipeNamesListModel::addElement);
+    }
+    
+
     private void setupRecipeListPanel() {
-        // Create the JList with the recipeListModel (which contains Recipe objects)
-        recipeList = new JList<>(recipeListModel);
-        recipeList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    
-        // Create the JList model to store recipe names only
+        // Create a JList with the recipe names from the HashMap
         recipeNamesListModel = new DefaultListModel<>();
-    
-        // Populate the model with recipe names
-        for (int i = 0; i < recipeListModel.getSize(); i++) {
-            recipeNamesListModel.addElement(recipeListModel.getElementAt(i).getName());
-        }
-    
-        // Create the JList with recipe names
+        updateRecipeNameList(); // Populate the list with recipe names
+        
         recipeNameList = new JList<>(recipeNamesListModel);
         recipeNameList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        // Add synchronized selection listener
+        
+        // Add a listener to synchronize selection and display details
         recipeNameList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                int selectedIndex = recipeNameList.getSelectedIndex();
-                if (selectedIndex != -1) {
-                    // Find the corresponding recipe in the full recipe list model
-                    for (int i = 0; i < recipeListModel.getSize(); i++) {
-                        if (recipeListModel.getElementAt(i).getName().equals(recipeNameList.getSelectedValue())) {
-                            recipeList.setSelectedIndex(i);
-                            displayRecipeDetails(recipeListModel.getElementAt(i));
-                            break;
-                        }
+                String selectedName = recipeNameList.getSelectedValue();
+                if (selectedName != null) {
+                    Recipe selectedRecipe = recipeMap.get(selectedName);
+                    if (selectedRecipe != null) {
+                        displayRecipeDetails(selectedRecipe);
                     }
                 }
             }
@@ -507,19 +501,22 @@ public class MainGUI {
         
         recipeNamesListModel.clear();
         
-        for (int i = 0; i < recipeListModel.getSize(); i++) {
-            Recipe recipe = recipeListModel.getElementAt(i);
-            if (isRecipeMatchingCriteria(recipe, searchText, selectedFilter)) {
-                recipeNamesListModel.addElement(recipe.getName());
+        // Iterate through the HashMap and filter recipes
+        for (String recipeName : recipeMap.keySet()) {
+            Recipe recipe = recipeMap.get(recipeName);
+            if (recipe != null && isRecipeMatchingCriteria(recipe, searchText, selectedFilter)) {
+                recipeNamesListModel.addElement(recipeName);
             }
         }
         
+        // Handle case when no recipes match
         if (recipeNamesListModel.isEmpty()) {
-            recipeDetailsArea.setText("");
+            recipeDetailsArea.setText("No matching recipes found.");
         } else {
             recipeNameList.setSelectedIndex(0);
         }
     }
+    
     
     private boolean isRecipeMatchingCriteria(Recipe recipe, String searchText, String filter) {
         boolean matchesSearch = recipe.getName().toLowerCase().contains(searchText);

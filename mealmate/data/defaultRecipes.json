@@ -1,0 +1,209 @@
+[
+  {
+    "name": "None",
+    "cookingTime": null,
+    "steps": "",
+    "servingSize": null,
+    "ingredients": []
+  },
+  {
+    "name": "Spaghetti Bolognese",
+    "cookingTime": 30,
+    "steps": "1. Cook the spaghetti according to package instructions.\n2. In a pan, sauté onion and garlic until soft.\n3. Add minced beef and cook until browned.\n4. Stir in canned tomatoes and simmer for 15 minutes.\n5. Season with salt and pepper, then serve over spaghetti.",
+    "servingSize": 4,
+    "ingredients": [
+      {
+        "name": "Spaghetti",
+        "quantity": 200.0,
+        "unit": "g"
+      },
+      {
+        "name": "Minced Beef",
+        "quantity": 100.0,
+        "unit": "g"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.0,
+        "unit": "piece"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 2.0,
+        "unit": "cloves"
+      },
+      {
+        "name": "Canned Tomatoes",
+        "quantity": 400.0,
+        "unit": "g"
+      },
+      {
+        "name": "Salt",
+        "quantity": 1.0,
+        "unit": "tsp"
+      },
+      {
+        "name": "Pepper",
+        "quantity": 0.5,
+        "unit": "tsp"
+      }
+    ]
+  },
+  {
+    "name": "Chicken Caesar Salad",
+    "cookingTime": 20,
+    "steps": "1. Grill the chicken breasts and slice them.\n2. Chop the romaine lettuce.\n3. In a bowl, combine lettuce, chicken, Parmesan, and croutons.\n4. Drizzle with Caesar dressing and toss to coat.\n5. Serve immediately.",
+    "servingSize": 2,
+    "ingredients": [
+      {
+        "name": "Chicken Breasts",
+        "quantity": 2.0,
+        "unit": "pieces"
+      },
+      {
+        "name": "Romaine Lettuce",
+        "quantity": 1.0,
+        "unit": "head"
+      },
+      {
+        "name": "Parmesan Cheese",
+        "quantity": 50.0,
+        "unit": "g"
+      },
+      {
+        "name": "Croutons",
+        "quantity": 1.0,
+        "unit": "cup"
+      },
+      {
+        "name": "Caesar Dressing",
+        "quantity": 0.5,
+        "unit": "cup"
+      }
+    ]
+  },
+  {
+    "name": "Vegetable Stir-Fry",
+    "cookingTime": 15,
+    "steps": "1. Heat olive oil in a pan.\n2. Add garlic and stir until fragrant.\n3. Add bell pepper, carrot, and broccoli, stir-fry for 5-7 minutes.\n4. Add soy sauce and cook for 2 more minutes.\n5. Serve with rice.",
+    "servingSize": 3,
+    "ingredients": [
+      {
+        "name": "Bell Pepper",
+        "quantity": 1.0,
+        "unit": "piece"
+      },
+      {
+        "name": "Carrot",
+        "quantity": 1.0,
+        "unit": "piece"
+      },
+      {
+        "name": "Broccoli Florets",
+        "quantity": 100.0,
+        "unit": "g"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 2.0,
+        "unit": "tbsp"
+      },
+      {
+        "name": "Olive Oil",
+        "quantity": 1.0,
+        "unit": "tbsp"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 1.0,
+        "unit": "clove"
+      }
+    ]
+  },
+  {
+    "name": "Pancakes",
+    "cookingTime": 25,
+    "steps": "1. In a bowl, mix flour, sugar, baking powder, and salt.\n2. Whisk in milk, egg, and melted butter until smooth.\n3. Heat a pan over medium heat and pour batter.\n4. Cook until bubbles form, then flip and cook until golden.\n5. Serve with syrup or toppings of choice.",
+    "servingSize": 4,
+    "ingredients": [
+      {
+        "name": "Flour",
+        "quantity": 200.0,
+        "unit": "g"
+      },
+      {
+        "name": "Sugar",
+        "quantity": 2.0,
+        "unit": "tbsp"
+      },
+      {
+        "name": "Baking Powder",
+        "quantity": 2.0,
+        "unit": "tsp"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "name": "Milk",
+        "quantity": 300.0,
+        "unit": "ml"
+      },
+      {
+        "name": "Egg",
+        "quantity": 1.0,
+        "unit": "piece"
+      },
+      {
+        "name": "Butter",
+        "quantity": 2.0,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  {
+    "name": "Beef Tacos",
+    "cookingTime": 20,
+    "steps": "1. Cook minced beef in a pan until browned.\n2. Add taco seasoning and a splash of water.\n3. Simmer until sauce thickens.\n4. Fill tortillas with beef, lettuce, cheese, and salsa.\n5. Serve with sour cream.",
+    "servingSize": 4,
+    "ingredients": [
+      {
+        "name": "Minced Beef",
+        "quantity": 500.0,
+        "unit": "g"
+      },
+      {
+        "name": "Taco Seasoning",
+        "quantity": 1.0,
+        "unit": "packet"
+      },
+      {
+        "name": "Tortillas",
+        "quantity": 8.0,
+        "unit": "pieces"
+      },
+      {
+        "name": "Lettuce",
+        "quantity": 1.0,
+        "unit": "head"
+      },
+      {
+        "name": "Cheddar Cheese",
+        "quantity": 150.0,
+        "unit": "g"
+      },
+      {
+        "name": "Salsa",
+        "quantity": 1.0,
+        "unit": "cup"
+      },
+      {
+        "name": "Sour Cream",
+        "quantity": 1.0,
+        "unit": "cup"
+      }
+    ]
+  }
+]

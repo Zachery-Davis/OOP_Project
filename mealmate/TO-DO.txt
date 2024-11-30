@@ -1,0 +1,19 @@
+Improvements
+-----------------
+Classes should only serve a single purpose (file management separation)
+Optimize Calendar rendering
+Distinguish extra adjacent days rendered
+Using personal recipes as templates
+
+Features
+---------------
+Add nutritional data to recipes
+Sorting recipe names
+Designate cooking days
+Recipes are set to a single serving and calendar handles the serving sizes (visualized with ingredient list)
+
+Grocery List
+---------------
+Inventory system?
+Automatically generate a grocery list based on selected recipes for the week.
+Option to save the grocery list as a PDF.
