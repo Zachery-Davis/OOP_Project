@@ -1,159 +1,186 @@
-[ {
-  "name" : "Spaghetti Bolognese",
-  "cookingTime" : 30,
-  "steps" : "1. Cook the spaghetti according to package instructions.\n2. In a pan, sauté onion and garlic until soft.\n3. Add minced beef and cook until browned.\n4. Stir in canned tomatoes and simmer for 15 minutes.\n5. Season with salt and pepper, then serve over spaghetti.",
-  "servingSize" : 4,
-  "ingredients" : [ {
-    "name" : "Spaghetti",
-    "quantity" : 200.0,
-    "unit" : "g"
-  }, {
-    "name" : "Minced Beef",
-    "quantity" : 100.0,
-    "unit" : "g"
-  }, {
-    "name" : "Onion",
-    "quantity" : 1.0,
-    "unit" : "piece"
-  }, {
-    "name" : "Garlic",
-    "quantity" : 2.0,
-    "unit" : "cloves"
-  }, {
-    "name" : "Canned Tomatoes",
-    "quantity" : 400.0,
-    "unit" : "g"
-  }, {
-    "name" : "Salt",
-    "quantity" : 1.0,
-    "unit" : "tsp"
-  }, {
-    "name" : "Pepper",
-    "quantity" : 0.5,
-    "unit" : "tsp"
-  } ]
-}, {
-  "name" : "Chicken Caesar Salad",
-  "cookingTime" : 20,
-  "steps" : "1. Grill the chicken breasts and slice them.\n2. Chop the romaine lettuce.\n3. In a bowl, combine lettuce, chicken, Parmesan, and croutons.\n4. Drizzle with Caesar dressing and toss to coat.\n5. Serve immediately.",
-  "servingSize" : 2,
-  "ingredients" : [ {
-    "name" : "Chicken Breasts",
-    "quantity" : 2.0,
-    "unit" : "pieces"
-  }, {
-    "name" : "Romaine Lettuce",
-    "quantity" : 1.0,
-    "unit" : "head"
-  }, {
-    "name" : "Parmesan Cheese",
-    "quantity" : 50.0,
-    "unit" : "g"
-  }, {
-    "name" : "Croutons",
-    "quantity" : 1.0,
-    "unit" : "cup"
-  }, {
-    "name" : "Caesar Dressing",
-    "quantity" : 0.5,
-    "unit" : "cup"
-  } ]
-}, {
-  "name" : "Beef Tacos",
-  "cookingTime" : 20,
-  "steps" : "1. Cook minced beef in a pan until browned.\n2. Add taco seasoning and a splash of water.\n3. Simmer until sauce thickens.\n4. Fill tortillas with beef, lettuce, cheese, and salsa.\n5. Serve with sour cream.",
-  "servingSize" : 4,
-  "ingredients" : [ {
-    "name" : "Minced Beef",
-    "quantity" : 500.0,
-    "unit" : "g"
-  }, {
-    "name" : "Taco Seasoning",
-    "quantity" : 1.0,
-    "unit" : "packet"
-  }, {
-    "name" : "Tortillas",
-    "quantity" : 8.0,
-    "unit" : "pieces"
-  }, {
-    "name" : "Lettuce",
-    "quantity" : 1.0,
-    "unit" : "head"
-  }, {
-    "name" : "Cheddar Cheese",
-    "quantity" : 150.0,
-    "unit" : "g"
-  }, {
-    "name" : "Salsa",
-    "quantity" : 1.0,
-    "unit" : "cup"
-  }, {
-    "name" : "Sour Cream",
-    "quantity" : 1.0,
-    "unit" : "cup"
-  } ]
-}, {
-  "name" : "Vegetable Stir-Fry",
-  "cookingTime" : 15,
-  "steps" : "1. Heat olive oil in a pan.\n2. Add garlic and stir until fragrant.\n3. Add bell pepper, carrot, and broccoli, stir-fry for 5-7 minutes.\n4. Add soy sauce and cook for 2 more minutes.\n5. Serve with rice.",
-  "servingSize" : 3,
-  "ingredients" : [ {
-    "name" : "Bell Pepper",
-    "quantity" : 1.0,
-    "unit" : "piece"
-  }, {
-    "name" : "Carrot",
-    "quantity" : 1.0,
-    "unit" : "piece"
-  }, {
-    "name" : "Broccoli Florets",
-    "quantity" : 100.0,
-    "unit" : "g"
-  }, {
-    "name" : "Soy Sauce",
-    "quantity" : 2.0,
-    "unit" : "tbsp"
-  }, {
-    "name" : "Olive Oil",
-    "quantity" : 1.0,
-    "unit" : "tbsp"
-  }, {
-    "name" : "Garlic",
-    "quantity" : 1.0,
-    "unit" : "clove"
-  } ]
-}, {
-  "name" : "Pancakes",
-  "cookingTime" : 20,
-  "steps" : "1. In a bowl, mix flour, sugar, baking powder, and salt.\n2. Whisk in milk, egg, and melted butter until smooth.\n3. Heat a pan over medium heat and pour batter.\n4. Cook until bubbles form, then flip and cook until golden.\n5. Serve with syrup or toppings of choice.",
-  "servingSize" : 4,
-  "ingredients" : [ {
-    "name" : "Flour",
-    "quantity" : 200.0,
-    "unit" : "g"
-  }, {
-    "name" : "Sugar",
-    "quantity" : 2.0,
-    "unit" : "tbsp"
-  }, {
-    "name" : "Baking Powder",
-    "quantity" : 2.0,
-    "unit" : "tsp"
-  }, {
-    "name" : "Salt",
-    "quantity" : 0.5,
-    "unit" : "tsp"
-  }, {
-    "name" : "Milk",
-    "quantity" : 300.0,
-    "unit" : "ml"
-  }, {
-    "name" : "Egg",
-    "quantity" : 1.0,
-    "unit" : "piece"
-  }, {
-    "name" : "Butter",
-    "quantity" : 2.0,
-    "unit" : "tbsp"
-  } ]
-} ]
+{
+  "Fruit Smoothie" : {
+    "name" : "Fruit Smoothie",
+    "cookingTime" : 5,
+    "steps" : "1. Add all ingredients to a blender.\n2. Blend until smooth.\n3. Pour into a glass and serve.",
+    "ingredients" : [ {
+      "name" : "Banana",
+      "quantity" : 1.0,
+      "unit" : "pcs"
+    }, {
+      "name" : "Strawberries",
+      "quantity" : 100.0,
+      "unit" : "g"
+    }, {
+      "name" : "Milk",
+      "quantity" : 200.0,
+      "unit" : "ml"
+    }, {
+      "name" : "Honey",
+      "quantity" : 10.0,
+      "unit" : "g"
+    } ],
+    "nutrition" : {
+      "calories" : 180,
+      "protein" : 6,
+      "fat" : 3,
+      "carbs" : 35
+    }
+  },
+  "Grilled Cheese Sandwich" : {
+    "name" : "Grilled Cheese Sandwich",
+    "cookingTime" : 10,
+    "steps" : "1. Butter the bread slices.\n2. Place cheese between the slices.\n3. Grill until golden brown on both sides.",
+    "ingredients" : [ {
+      "name" : "Bread",
+      "quantity" : 2.0,
+      "unit" : "slices"
+    }, {
+      "name" : "Cheese",
+      "quantity" : 2.0,
+      "unit" : "slices"
+    }, {
+      "name" : "Butter",
+      "quantity" : 10.0,
+      "unit" : "g"
+    } ],
+    "nutrition" : {
+      "calories" : 300,
+      "protein" : 10,
+      "fat" : 15,
+      "carbs" : 30
+    }
+  },
+  "Veggie Stir-Fry" : {
+    "name" : "Veggie Stir-Fry",
+    "cookingTime" : 10,
+    "steps" : "1. Heat oil in a pan.\n2. Add chopped vegetables and stir-fry.\n3. Season and serve.",
+    "ingredients" : [ {
+      "name" : "Bell Pepper",
+      "quantity" : 100.0,
+      "unit" : "g"
+    }, {
+      "name" : "Carrot",
+      "quantity" : 100.0,
+      "unit" : "g"
+    }, {
+      "name" : "Soy Sauce",
+      "quantity" : 10.0,
+      "unit" : "ml"
+    } ],
+    "nutrition" : {
+      "calories" : 100,
+      "protein" : 3,
+      "fat" : 5,
+      "carbs" : 12
+    }
+  },
+  "Pasta with Pesto" : {
+    "name" : "Pasta with Pesto",
+    "cookingTime" : 10,
+    "steps" : "1. Cook pasta.\n2. Drain and mix with pesto.\n3. Serve with grated cheese.",
+    "ingredients" : [ {
+      "name" : "Pasta",
+      "quantity" : 100.0,
+      "unit" : "g"
+    }, {
+      "name" : "Pesto",
+      "quantity" : 30.0,
+      "unit" : "g"
+    }, {
+      "name" : "Parmesan",
+      "quantity" : 10.0,
+      "unit" : "g"
+    } ],
+    "nutrition" : {
+      "calories" : 350,
+      "protein" : 10,
+      "fat" : 15,
+      "carbs" : 45
+    }
+  },
+  "Greek Salad" : {
+    "name" : "Greek Salad",
+    "cookingTime" : 10,
+    "steps" : "1. Chop vegetables.\n2. Add olives and feta cheese.\n3. Drizzle with olive oil and season.",
+    "ingredients" : [ {
+      "name" : "Tomato",
+      "quantity" : 100.0,
+      "unit" : "g"
+    }, {
+      "name" : "Cucumber",
+      "quantity" : 100.0,
+      "unit" : "g"
+    }, {
+      "name" : "Feta Cheese",
+      "quantity" : 50.0,
+      "unit" : "g"
+    }, {
+      "name" : "Olives",
+      "quantity" : 30.0,
+      "unit" : "g"
+    }, {
+      "name" : "Olive Oil",
+      "quantity" : 10.0,
+      "unit" : "ml"
+    } ],
+    "nutrition" : {
+      "calories" : 200,
+      "protein" : 6,
+      "fat" : 16,
+      "carbs" : 8
+    }
+  },
+  "Scrambled Eggs" : {
+    "name" : "Scrambled Eggs",
+    "cookingTime" : 10,
+    "steps" : "1. Crack eggs into a bowl.\n2. Add salt and pepper, then whisk.\n3. Heat butter in a pan and cook eggs while stirring.",
+    "ingredients" : [ {
+      "name" : "Eggs",
+      "quantity" : 3.0,
+      "unit" : "pcs"
+    }, {
+      "name" : "Butter",
+      "quantity" : 10.0,
+      "unit" : "g"
+    }, {
+      "name" : "Salt",
+      "quantity" : 1.0,
+      "unit" : "g"
+    }, {
+      "name" : "Pepper",
+      "quantity" : 1.0,
+      "unit" : "g"
+    } ],
+    "nutrition" : {
+      "calories" : 250,
+      "protein" : 18,
+      "fat" : 20,
+      "carbs" : 2
+    }
+  },
+  "Oatmeal" : {
+    "name" : "Oatmeal",
+    "cookingTime" : 5,
+    "steps" : "1. Heat milk.\n2. Add oats and simmer.\n3. Stir in honey and top with fruits.",
+    "ingredients" : [ {
+      "name" : "Oats",
+      "quantity" : 50.0,
+      "unit" : "g"
+    }, {
+      "name" : "Milk",
+      "quantity" : 200.0,
+      "unit" : "ml"
+    }, {
+      "name" : "Honey",
+      "quantity" : 10.0,
+      "unit" : "g"
+    } ],
+    "nutrition" : {
+      "calories" : 150,
+      "protein" : 5,
+      "fat" : 3,
+      "carbs" : 25
+    }
+  }
+}

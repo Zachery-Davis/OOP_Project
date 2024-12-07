@@ -1,16 +1,12 @@
 package com.mealmate;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,7 +27,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class RecipeGUI {
     private JFrame frame;
@@ -40,6 +35,8 @@ public class RecipeGUI {
     private JList<String> recipeNameList;
     private DefaultListModel<String> recipeNamesListModel;
     private JTextArea recipeDetailsArea;
+    private JPanel inputPanel;
+    private ArrayList<Component> inputList;
 
     public RecipeGUI(RecipeSelectionListener listener) {
         frame = new JFrame("Meal Prepping System");
@@ -48,8 +45,16 @@ public class RecipeGUI {
         frame.setLayout(new BorderLayout());
 
         // Load recipes when the program starts
-        recipeMap = new HashMap<>();
-        loadRecipesFromFile();
+        defaultRecipes = FileManagement.loadJsonFile("data", "defaultRecipes.json", new TypeReference<List<Recipe>>() {});
+        recipeMap = FileManagement.loadJsonFile("data", "recipes.json", new TypeReference<HashMap<String, Recipe>>() {});
+
+        // Window listener to save recipes on program exit
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                saveRecipes();
+            }
+        });
 
         // Setup Panels
         setupRecipeListPanel();
@@ -78,26 +83,25 @@ public class RecipeGUI {
         controlPanel.add(deleteRecipeButton);
         frame.add(controlPanel, BorderLayout.SOUTH);
 
-        // Window listener to save recipes on program exit
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                saveRecipesToFile();
-            }
-        });
-
         frame.setVisible(true);
+
+        constructInputPanel();
     }
 
     private void selectRecipe(RecipeSelectionListener listener){
         String selectedName = recipeNameList.getSelectedValue();
         if (selectedName != null) {
             Recipe selectedRecipe = recipeMap.get(selectedName);
-            listener.onRecipeSelected(selectedRecipe);
+            saveRecipes();
             frame.dispose();
+            listener.onRecipeSelected(selectedRecipe);
         } else {
             JOptionPane.showMessageDialog(frame, "Select a meal first.");
         }
+    }
+
+    private void saveRecipes(){
+        FileManagement.saveToJson(recipeMap, "data", "recipes.json");
     }
 
     private void addRecipe() {
@@ -109,6 +113,48 @@ public class RecipeGUI {
         }
     }
 
+    private void constructInputPanel(){
+        inputPanel = new JPanel(new GridLayout(6, 2));
+        inputList = new ArrayList<Component>();
+
+        JComboBox<String> defaultRecipeDropdown = new JComboBox<>(defaultRecipes.stream().map(Recipe::getName).toArray(String[]::new));
+        JTextField nameField = new JTextField();
+        JTextField timeField = new JTextField();
+        JTextArea stepsField = new JTextArea(5, 30);
+        JTextArea ingredientArea = new JTextArea(5, 20);
+        JTextArea nutritionArea = new JTextArea(4, 20);
+
+        inputPanel.add(new JLabel("Choose Default Recipe:"));
+        inputPanel.add(defaultRecipeDropdown);
+        inputList.add(defaultRecipeDropdown);
+        inputPanel.add(new JLabel("Name:"));
+        inputPanel.add(nameField);
+        inputList.add(nameField);
+        inputPanel.add(new JLabel("Cooking Time (min):"));
+        inputPanel.add(timeField);
+        inputList.add(timeField);
+        inputPanel.add(new JLabel("Steps:"));
+        inputPanel.add(new JScrollPane(stepsField));
+        inputList.add(stepsField);
+        inputPanel.add(new JLabel("<html>Ingredients (Per Serving):<br>(\"name,quantity,unit\" per line)</html>"));
+        inputPanel.add(new JScrollPane(ingredientArea));
+        inputList.add(ingredientArea);
+        inputPanel.add(new JLabel("<html>Calories (kCal):<br>Protein (g):<br>Fat (g):<br>Carbs (g):</html>"));
+        inputPanel.add(new JScrollPane(nutritionArea));
+        inputList.add(nutritionArea);
+    }
+
+    private void updateInputPanel(String[] str){
+        for(int i = 1; i < inputList.size(); i++){
+            Component component = inputList.get(i);
+            if (component instanceof JTextField) {
+                ((JTextField) component).setText(str[i - 1]);
+            } else if (component instanceof JTextArea) {
+                ((JTextArea) component).setText(str[i - 1]);
+            }
+        }
+    }
+
     private void editRecipe() {
         String selectedName = recipeNameList.getSelectedValue();
         if (selectedName == null) {
@@ -117,58 +163,67 @@ public class RecipeGUI {
         }
 
         Recipe selectedRecipe = recipeMap.get(selectedName);
-    
-        // Pre-fill input fields with the selected recipe's details
-        JTextField nameField = new JTextField(selectedRecipe.getName());
-        JTextField timeField = new JTextField(String.valueOf(selectedRecipe.getCookingTime()));
-        JTextArea stepsField = new JTextArea(selectedRecipe.getSteps(), 5, 20);
-        JTextField servingsField = new JTextField(String.valueOf(selectedRecipe.getServingSize()));
-        JTextArea ingredientArea = new JTextArea(5, 20);
-        StringBuilder ingredientText = new StringBuilder();
+
+        String nameInput = selectedRecipe.getName();
+        String timeInput = String.valueOf(selectedRecipe.getCookingTime());
+        String stepsInput = selectedRecipe.getSteps();
+        String ingredientInput = "";
+        String nutritionInput = selectedRecipe.getNutrition().toString().trim();
+
         for (Ingredient ingredient : selectedRecipe.getIngredients()) {
-            ingredientText.append(ingredient.getName()).append(",").append(ingredient.getQuantity()).append(",").append(ingredient.getUnit()).append("\n");
+            ingredientInput += ingredient.getName() + "," 
+            + ingredient.getQuantity() + "," 
+            + ingredient.getUnit() + "\n";
         }
-        ingredientArea.setText(ingredientText.toString().trim());
-    
-        JPanel inputPanel = new JPanel(new GridLayout(0, 2));
-        inputPanel.add(new JLabel("Name:"));
-        inputPanel.add(nameField);
-        inputPanel.add(new JLabel("Cooking Time (min):"));
-        inputPanel.add(timeField);
-        inputPanel.add(new JLabel("Steps:"));
-        inputPanel.add(new JScrollPane(stepsField));
-        inputPanel.add(new JLabel("Serving Size:"));
-        inputPanel.add(servingsField);
-        inputPanel.add(new JLabel("Ingredients (name,quantity,unit per line):"));
-        inputPanel.add(new JScrollPane(ingredientArea));
+        
+        updateInputPanel(new String[]{nameInput, timeInput, stepsInput, ingredientInput, nutritionInput});
     
         int result = JOptionPane.showConfirmDialog(frame, inputPanel, "Edit Recipe", JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
             try {
                 // Retrieve values from the input fields
-                String name = nameField.getText().trim();
-                String timeInput = timeField.getText().trim();
-                String stepsInput = stepsField.getText().trim();
-                String servingsInput = servingsField.getText().trim();
-                String ingredientInput = ingredientArea.getText().trim();
+                JTextField nameField = (JTextField)inputList.get(1);
+                JTextField timeField = (JTextField)inputList.get(2);
+                JTextArea stepsField = (JTextArea)inputList.get(3);
+                JTextArea ingredientArea = (JTextArea)inputList.get(4);
+                JTextArea nutritionArea = (JTextArea)inputList.get(5);
+                nameInput = nameField.getText().trim();
+                timeInput = timeField.getText().trim();
+                stepsInput = stepsField.getText().trim();
+                ingredientInput = ingredientArea.getText().trim();
+                nutritionInput = nutritionArea.getText().trim();
+                String[] nutritionValues = nutritionInput.split("\n");
 
                 // Use the new validation method
-                if (!validateRecipeInput(name, timeInput, stepsInput, servingsInput, ingredientInput)) {
+                if (!validateRecipeInput(nameInput, timeInput, stepsInput, ingredientInput, nutritionValues)) {
                     // Validation failed, method will show error message
                     return;
                 }
 
-                int cookingTime = Integer.parseInt(timeInput);
-                int servingSize = Integer.parseInt(servingsInput);
+                Nutrition nutrition = null;
+                try {
+                    if (nutritionValues.length != 4) {
+                        throw new IllegalArgumentException("Please enter exactly four integers: Calories, Protein, Fat, and Carbs, each on a new line.");
+                    }
+                
+                    int calories = Integer.parseInt(nutritionValues[0].trim());
+                    int protein = Integer.parseInt(nutritionValues[1].trim());
+                    int fat = Integer.parseInt(nutritionValues[2].trim());
+                    int carbs = Integer.parseInt(nutritionValues[3].trim());
+                
+                    nutrition = new Nutrition(calories, protein, fat, carbs);
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(frame, "Invalid input format. Please enter numeric values.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                }
 
                 List<Ingredient> ingredients = parseIngredients(ingredientInput);
 
                 // Update the selected recipe with the new values
-                selectedRecipe.setName(name);
-                selectedRecipe.setCookingTime(cookingTime);
+                selectedRecipe.setName(nameInput);
+                selectedRecipe.setCookingTime(Integer.parseInt(timeInput));
                 selectedRecipe.setSteps(stepsInput);
-                selectedRecipe.setServingSize(servingSize);
                 selectedRecipe.setIngredients(ingredients);
+                selectedRecipe.setNutrition(nutrition);
 
                 if (selectedRecipe != null) {
                     // Logic for editing remains the same
@@ -185,7 +240,7 @@ public class RecipeGUI {
     }
 
     private List<Ingredient> parseIngredients(String ingredientInput) {
-        return Arrays.stream(ingredientInput.split("\\n"))
+        return Arrays.stream(ingredientInput.split("\n"))
             .filter(line -> !line.trim().isEmpty())
             .map(line -> {
                 String[] parts = line.split(",");
@@ -217,19 +272,20 @@ public class RecipeGUI {
         String nameInput = "";
         String timeInput = "";
         String stepsInput = "";
-        String servingsInput = "";
         String ingredientInput = "";
-
-        loadDefaultRecipes();
+        String nutritionInput = "";
     
         while (true) {
             // Pre-fill input fields with the stored values
-            JComboBox<String> defaultRecipeDropdown = new JComboBox<>(defaultRecipes.stream().map(Recipe::getName).toArray(String[]::new));
-            JTextField nameField = new JTextField(nameInput);
-            JTextField timeField = new JTextField(timeInput);
-            JTextArea stepsField = new JTextArea(stepsInput, 5, 20);
-            JTextField servingsField = new JTextField(servingsInput);
-            JTextArea ingredientArea = new JTextArea(ingredientInput, 5, 20);
+            @SuppressWarnings("unchecked")
+            JComboBox<String> defaultRecipeDropdown = (JComboBox<String>)inputList.get(0);
+            JTextField nameField = (JTextField)inputList.get(1);
+            JTextField timeField = (JTextField)inputList.get(2);
+            JTextArea stepsField = (JTextArea)inputList.get(3);
+            JTextArea ingredientArea = (JTextArea)inputList.get(4);
+            JTextArea nutritionArea = (JTextArea)inputList.get(5);
+
+            updateInputPanel(new String[]{nameInput, timeInput, stepsInput, ingredientInput, nutritionInput});
 
             // Auto-fill when a default recipe is selected
             defaultRecipeDropdown.addActionListener(e -> {
@@ -239,28 +295,14 @@ public class RecipeGUI {
                     nameField.setText(selectedRecipe.getName());
                     timeField.setText(String.valueOf(selectedRecipe.getCookingTime()));
                     stepsField.setText(selectedRecipe.getSteps());
-                    servingsField.setText(String.valueOf(selectedRecipe.getServingSize()));
                     StringBuilder ingredientText = new StringBuilder();
                     for (Ingredient ingredient : selectedRecipe.getIngredients()) {
                         ingredientText.append(ingredient.getName()).append(",").append(ingredient.getQuantity()).append(",").append(ingredient.getUnit()).append("\n");
                     }
                     ingredientArea.setText(ingredientText.toString().trim());
+                    nutritionArea.setText(selectedRecipe.getNutrition().toString());
                 }
             });
-    
-            JPanel inputPanel = new JPanel(new GridLayout(0, 2));
-            inputPanel.add(new JLabel("Choose Default Recipe:"));
-            inputPanel.add(defaultRecipeDropdown);
-            inputPanel.add(new JLabel("Name:"));
-            inputPanel.add(nameField);
-            inputPanel.add(new JLabel("Cooking Time (min):"));
-            inputPanel.add(timeField);
-            inputPanel.add(new JLabel("Steps:"));
-            inputPanel.add(new JScrollPane(stepsField));
-            inputPanel.add(new JLabel("Serving Size:"));
-            inputPanel.add(servingsField);
-            inputPanel.add(new JLabel("Ingredients (name,quantity,unit per line):"));
-            inputPanel.add(new JScrollPane(ingredientArea));
     
             int result = JOptionPane.showConfirmDialog(frame, inputPanel, "Recipe Details", JOptionPane.OK_CANCEL_OPTION);
             if (result == JOptionPane.OK_OPTION) {
@@ -269,26 +311,41 @@ public class RecipeGUI {
                     nameInput = nameField.getText().trim();
                     timeInput = timeField.getText().trim();
                     stepsInput = stepsField.getText().trim();
-                    servingsInput = servingsField.getText().trim();
                     ingredientInput = ingredientArea.getText().trim();
+                    nutritionInput = nutritionArea.getText().trim();
+                    String[] nutritionValues = nutritionArea.getText().trim().split("\\n");
+
     
                     // Validate and parse the inputs
-                    if (!validateRecipeInput(nameInput, timeInput, stepsInput, servingsInput, ingredientInput)) {
+                    if (!validateRecipeInput(nameInput, timeInput, stepsInput, ingredientInput, nutritionValues)) {
                         // Validation failed, return null to keep the dialog open
                         continue;
                     }
+    
+                    Nutrition nutrition = null;
+                    try {
+                        if (nutritionValues.length != 4) {
+                            throw new IllegalArgumentException("Please enter exactly four integers: Calories, Protein, Fat, and Carbs, each on a new line.");
+                        }
+                    
+                        int calories = Integer.parseInt(nutritionValues[0].trim());
+                        int protein = Integer.parseInt(nutritionValues[1].trim());
+                        int fat = Integer.parseInt(nutritionValues[2].trim());
+                        int carbs = Integer.parseInt(nutritionValues[3].trim());
+                    
+                        nutrition = new Nutrition(calories, protein, fat, carbs);
+                    } catch (NumberFormatException e) {
+                        JOptionPane.showMessageDialog(frame, "Invalid input format. Please enter numeric values.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                    }
+    
+                    List<Ingredient> ingredients = parseIngredients(ingredientInput);
 
                     // Check if a recipe with the same name already exists
                     if (recipeMap.containsKey(nameInput)) {
                         throw new IllegalArgumentException(nameInput + " already exists.");
                     }
     
-                    int cookingTime = Integer.parseInt(timeInput);
-                    int servingSize = Integer.parseInt(servingsInput);
-    
-                    List<Ingredient> ingredients = parseIngredients(ingredientInput);
-    
-                    return new Recipe(nameInput, cookingTime, stepsInput, servingSize, ingredients);
+                    return new Recipe(nameInput, Integer.parseInt(timeInput), stepsInput, ingredients, nutrition);
     
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(frame, 
@@ -301,72 +358,6 @@ public class RecipeGUI {
                 return null;
             }
         }
-    }
-
-    private void saveRecipesToFile() {
-        List<Recipe> data = new ArrayList<>(recipeMap.values());
-        String filename = "data/recipes.json";
-        try {
-            ensureDataDirectoryExists();
-            File file = new File(filename);
-
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.writerWithDefaultPrettyPrinter().writeValue(file, data);
-
-            // Create backup
-            File backupFile = new File(filename.replace(".json", "_backup.json"));
-            Files.copy(file.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(frame, 
-                "Error saving to " + filename + ": " + e.getMessage(), 
-                "Save Error", 
-                JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private <T> List<T> loadJsonFile(String filename, TypeReference<List<T>> typeReference) {
-        File file = new File(filename);
-        File fileBackup = new File(filename.replace(".json", "_backup.json"));
-        ObjectMapper mapper = new ObjectMapper();
-
-        try {
-            // Check if the file exists, if not, replace it with the backup if available
-            if (!file.exists()) {
-                if (!fileBackup.exists()) {
-                    System.out.println("No " + filename + " file or backup found.");
-                    return Collections.emptyList();
-                }
-                Files.copy(fileBackup.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
-            // Attempt to read the primary file
-            return mapper.readValue(file, typeReference);
-        } catch (IOException e) {
-            System.out.println("Error reading file: " + filename + ", attempting to use backup.");
-            // Attempt to recover from backup
-            if (fileBackup.exists()) {
-                try {
-                    Files.copy(fileBackup.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    return mapper.readValue(file, typeReference);
-                } catch (IOException backupException) {
-                    System.out.println("Error reading backup file: " + fileBackup.getName());
-                }
-            } else {
-                System.out.println("Backup file not found or inaccessible.");
-            }
-        }
-        // If both attempts fail, return an empty list
-        return Collections.emptyList();
-    }
-    
-    private void loadRecipesFromFile() {
-        List<Recipe> recipes = loadJsonFile("data/recipes.json", new TypeReference<List<Recipe>>() {});
-        for (Recipe recipe : recipes) {
-            recipeMap.put(recipe.getName(), recipe);
-        }
-    }
-
-    private void loadDefaultRecipes() {
-        defaultRecipes = loadJsonFile("data/defaultRecipes.json", new TypeReference<List<Recipe>>() {});
     }
 
     private void updateRecipeNameList() {
@@ -407,30 +398,42 @@ public class RecipeGUI {
         }
     
         StringBuilder recipeDetails = new StringBuilder();
-        recipeDetails.append("Name: ").append(recipe.getName()).append("\n")
-            .append("Cooking Time: ").append(recipe.getCookingTime()).append(" minutes\n")
-            .append("Serving Size: ").append(recipe.getServingSize()).append("\n")
-            .append("Steps: \n").append(recipe.getSteps()).append("\n")
-            .append("Ingredients: \n");
+        recipeDetails.append("Name: ").append(recipe.getName())
+            .append("\nCooking Time: ").append(recipe.getCookingTime()).append(" minutes\n")
+            .append("\nSteps: \n").append(recipe.getSteps())
+            .append("\n\nIngredients: \n");
     
         for (Ingredient ingredient : recipe.getIngredients()) {
             recipeDetails.append(ingredient.getName())
                 .append(", ").append(ingredient.getQuantity())
                 .append(" ").append(ingredient.getUnit()).append("\n");
         }
+
+        Nutrition nutrition = recipe.getNutrition();
+        recipeDetails.append("\nNutrition: \n").append(nutrition.getCalories()).append(" kcal\n")
+                    .append(nutrition.getProtein()).append(" g protein\n")
+                    .append(nutrition.getFat()).append(" g fat\n")
+                    .append(nutrition.getCarbs()).append(" g carbs\n");
+
     
         recipeDetailsArea.setText(recipeDetails.toString());
     }    
 
-    private boolean validateRecipeInput(String name, String cookingTime, String steps, String servingSize, String ingredientInput) {
+    private boolean validateRecipeInput(String name, String cookingTime, String steps, String ingredientInput, String[] nutritionValues) {
         try {
             // Validate required fields
             validateField(name, "Recipe name");
             validateNumericField(cookingTime, "Cooking time");
-            validateNumericField(servingSize, "Serving size");
             
             // Parse ingredients to validate their format
             parseIngredients(ingredientInput);
+            
+            for (String value : nutritionValues) {
+                if (!value.matches("\\d+")) {
+                    throw new IllegalArgumentException("Each line must contain a valid numeric value.");
+                }
+            }
+            
             
             return true;
         } catch (IllegalArgumentException e) {
@@ -455,19 +458,6 @@ public class RecipeGUI {
             throw new IllegalArgumentException(fieldName + " must be a positive number.");
         }
         return numericValue;
-    }
-
-    private void ensureDataDirectoryExists() {
-        File dataDir = new File("data");
-        if (!dataDir.exists()) {
-            boolean dirCreated = dataDir.mkdirs();
-            if (!dirCreated) {
-                JOptionPane.showMessageDialog(frame, 
-                    "Could not create data directory. Please check permissions.", 
-                    "Error", 
-                    JOptionPane.ERROR_MESSAGE);
-            }
-        }
     }
 
     private void setupSearchAndFilter() {
@@ -524,9 +514,6 @@ public class RecipeGUI {
         switch (filter) {
             case "Quick Meals (under 30 min)":
                 matchesFilter = recipe.getCookingTime() <= 30;
-                break;
-            case "Large Serving Meals (6+ servings)":
-                matchesFilter = recipe.getServingSize() >= 6;
                 break;
             default:
                 matchesFilter = true;

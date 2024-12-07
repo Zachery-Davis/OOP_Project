@@ -2,50 +2,47 @@ package com.mealmate;
 
 import javax.swing.*;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+
 import java.awt.*;
-import java.time.DateTimeException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.LocalDate;
-import java.time.Month;
 import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
-
 public class CalendarGUI extends JFrame implements RecipeSelectionListener {
     private JLabel monthLabel;
     private JPanel calendarPanel;
     private LocalDate currentDate;
     private LocalDate selectedDate;
-    private Map<LocalDate, List<String>> mealSchedule;
-    private HashMap<String, Recipe> recipeMap;
-    private JPanel previouslySelectedPanel;
-    private JLabel previouslySelectedMeal;
-    private String selectedMealName;
-    private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    private int screenWidth = screenSize.width;
-    private int screenHeight = screenSize.height;
+    private Meal selectedMeal;
+    private Map<LocalDate, MealPlan> mealSchedule;
+    private JPanel prevSelectedDayPanel;
+    private JLabel prevSelectedMealPanel;
+    private int mealPlanColorCounter;
+    // private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    // private int screenWidth = screenSize.width;
+    // private int screenHeight = screenSize.height;
 
     public CalendarGUI() {
         currentDate = LocalDate.now();
         selectedDate = null;
-        previouslySelectedPanel = null;
-        previouslySelectedMeal = null;
-        selectedMealName = null;
+        prevSelectedDayPanel = null;
+        prevSelectedMealPanel = null;
+        selectedMeal = null;
         mealSchedule = new HashMap<>();
-        recipeMap = new HashMap<>();
+        mealPlanColorCounter = 0;
 
-        loadMealSchedule();
-        loadRecipesFromFile();
+        // Load calendar when program starts
+        mealSchedule = FileManagement.loadJsonFile("data", "calendar.json", new TypeReference<Map<LocalDate, MealPlan>>() {});
 
         setTitle("Meal Calendar");
         // Maximize the window
@@ -56,7 +53,7 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent e) {
-                saveMealSchedule(); // Save data before exiting
+                FileManagement.saveToJson(mealSchedule, "data", "calendar.json");
                 System.exit(0);
             }
         });
@@ -88,8 +85,8 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
 
 
         // Add Bottom Buttons
-        JButton viewRecipeButton = new JButton("View Recipe");
-        viewRecipeButton.addActionListener(e -> viewSelectedRecipe());
+        JButton viewRecipeButton = new JButton("View Meal");
+        viewRecipeButton.addActionListener(e -> viewSelectedMeal());
 
         JButton addMealButton = new JButton("Add/Modify Meal");
         addMealButton.addActionListener(e -> {
@@ -103,9 +100,21 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         JButton removeMealButton = new JButton("Remove Meal");
         removeMealButton.addActionListener(e -> removeMealFromSelectedDate());
 
+        JButton createMealPlanButton = new JButton("Create Meal Plan");
+        createMealPlanButton.addActionListener(e -> createMealPlan());
+
+        JButton deleteMealPlanButton = new JButton("Delete Meal Plan");
+        deleteMealPlanButton.addActionListener(e -> deleteMealPlan());
+
+        JButton genGroceryButton = new JButton("Generate Grocery List");
+        genGroceryButton.addActionListener(e -> genGroceryList());
+
         bottomPanel.add(viewRecipeButton);
         bottomPanel.add(addMealButton);
         bottomPanel.add(removeMealButton);
+        bottomPanel.add(createMealPlanButton);
+        bottomPanel.add(deleteMealPlanButton);
+        bottomPanel.add(genGroceryButton);
 
         // Set layouts for the panels that allow resizing of contents
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
@@ -123,97 +132,180 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         updateCalendar(currentDate);
         setVisible(true);
     }
-
-    private void viewSelectedRecipe() {
-        if (selectedMealName != null) {
-            Recipe selectedRecipe = recipeMap.get(selectedMealName);
-            if (selectedRecipe != null) {
-                JOptionPane.showMessageDialog(this, formatRecipeDetails(selectedRecipe), "Recipe Details", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "Recipe details not found.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+    
+    private void viewSelectedMeal() {
+        if (selectedMeal != null) {
+            JOptionPane.showMessageDialog(this, selectedMeal.toString(), "Meal Details", JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this, "Please select a meal first.", "Missing Selection", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
-    private <T> List<T> loadJsonFile(String filename, TypeReference<List<T>> typeReference) {
-        File file = new File(filename);
-        File fileBackup = new File(filename.replace(".json", "_backup.json"));
-        ObjectMapper mapper = new ObjectMapper();
+    private MealPlan createMealPlan() {
+        LocalDate weekStart = selectedDate;
 
-        try {
-            // Check if the file exists, if not, replace it with the backup if available
-            if (!file.exists()) {
-                if (!fileBackup.exists()) {
-                    System.out.println("No " + filename + " file or backup found.");
-                    return Collections.emptyList();
-                }
-                Files.copy(fileBackup.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
-            // Attempt to read the primary file
-            return mapper.readValue(file, typeReference);
-        } catch (IOException e) {
-            System.out.println("Error reading file: " + filename + ", attempting to use backup.");
-            // Attempt to recover from backup
-            if (fileBackup.exists()) {
+        String[] options = {"End Date", "Duration (days)"};
+        int choice = JOptionPane.showOptionDialog(
+                this, 
+                "Select an option to define the meal plan end date.", 
+                "Meal Plan Options", 
+                JOptionPane.DEFAULT_OPTION, 
+                JOptionPane.QUESTION_MESSAGE, 
+                null, 
+                options, 
+                options[0]);
+
+        LocalDate weekEnd = null;
+        
+        if (choice == 0) { // Date option
+            String dateInput = JOptionPane.showInputDialog(this, "Enter the meal plan end date (yyyy-MM-dd):");
+            if (dateInput != null && !dateInput.isEmpty()) {
                 try {
-                    Files.copy(fileBackup.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    return mapper.readValue(file, typeReference);
-                } catch (IOException backupException) {
-                    System.out.println("Error reading backup file: " + fileBackup.getName());
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    weekEnd = LocalDate.parse(dateInput, formatter);
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(this, "Invalid date format. Please use yyyy-MM-dd.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return null;
                 }
             } else {
-                System.out.println("Backup file not found or inaccessible.");
+                JOptionPane.showMessageDialog(this, "End date is required.", "Error", JOptionPane.ERROR_MESSAGE);
+                return null;
+            }
+        } else if (choice == 1) { // Duration option
+            String durationInput = JOptionPane.showInputDialog(this, "Enter the meal plan duration in days:");
+            if (durationInput != null && !durationInput.isEmpty()) {
+                try {
+                    int duration = Integer.parseInt(durationInput);
+                    weekEnd = weekStart.plusDays(duration - 1);
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Invalid duration. Please enter a valid number of days.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return null;
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Duration is required.", "Error", JOptionPane.ERROR_MESSAGE);
+                return null;
             }
         }
-        // If both attempts fail, return an empty list
-        return Collections.emptyList();
+        
+        MealPlan mealPlan = mealSchedule.get(weekStart);
+
+        if (mealPlan == null) {
+            mealPlan = new MealPlan(weekStart, weekEnd);
+            mealSchedule.put(weekStart, mealPlan);
+        }
+
+        updateCalendar(currentDate);
+        return mealPlan;
     }
 
-    private void loadRecipesFromFile() {
-        List<Recipe> recipes = loadJsonFile("data/recipes.json", new TypeReference<List<Recipe>>() {});
-        for (Recipe recipe : recipes) {
-            recipeMap.put(recipe.getName(), recipe);
+    private MealPlan findMealPlan(LocalDate date) {
+        for (MealPlan mealPlan : mealSchedule.values()) {
+            if ((date.isEqual(mealPlan.getStartDate()) || date.isAfter(mealPlan.getStartDate())) &&
+                (date.isEqual(mealPlan.getEndDate()) || date.isBefore(mealPlan.getEndDate()))) {
+                return mealPlan; 
+            }
+        }
+        return null;
+    }
+
+    private void deleteMealPlan(){
+        if(selectedDate != null){
+            mealSchedule.remove(findMealPlan(selectedDate).getStartDate());
+            updateCalendar(currentDate);
+        }else{
+            JOptionPane.showMessageDialog(this, "Please select a day with a meal plan first.", "Missing Selection", JOptionPane.INFORMATION_MESSAGE);
         }
     }
     
-    private String formatRecipeDetails(Recipe recipe) {
-        StringBuilder details = new StringBuilder();
-        details.append("Name: ").append(recipe.getName()).append("\n")
-               .append("Cooking Time: ").append(recipe.getCookingTime()).append(" minutes\n")
-               .append("Serving Size: ").append(recipe.getServingSize()).append("\n\n")
-               .append("Steps:\n").append(recipe.getSteps()).append("\n\n")
-               .append("Ingredients:\n");
+    private void genGroceryList() {
+        MealPlan mealPlan = findMealPlan(selectedDate);
+        
+        if (mealPlan != null) {
+            GroceryList list = mealPlan.getGroceryList();
+            String groceryListText = list.toString();
+            
+            Object[] options = {"Return", "Save as PDF"};
+            int choice = JOptionPane.showOptionDialog(this,
+                    groceryListText, 
+                    "Grocery List", 
+                    JOptionPane.DEFAULT_OPTION, 
+                    JOptionPane.INFORMATION_MESSAGE,
+                    null, 
+                    options, 
+                    options[0]);
     
-        for (Ingredient ingredient : recipe.getIngredients()) {
-            details.append("- ").append(ingredient.getName()).append(": ")
-                   .append(ingredient.getQuantity()).append(" ")
-                   .append(ingredient.getUnit()).append("\n");
-        }
-        return details.toString();
-    }    
-
-    private void removeMealFromSelectedDate() {
-        if (selectedDate != null && selectedMealName != null) {
-            if (mealSchedule.get(selectedDate).remove(selectedMealName)) {
-                if (mealSchedule.get(selectedDate).isEmpty()) {
-                    mealSchedule.remove(selectedDate); // Remove date if no meals remain
-                }
-                updateCalendar(currentDate); // Refresh calendar
-            } else {
-                JOptionPane.showMessageDialog(this, "Failed to remove meal. Please try again.", "Remove Failure", JOptionPane.ERROR_MESSAGE);
+            if (choice == 1) {
+                saveGroceryListAsPDF(groceryListText);
+                return;
             }
         } else {
-            JOptionPane.showMessageDialog(this, "Please select a day and a meal to remove.", "Missing Selection", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select a day that has a meal plan.", "Missing Selection", JOptionPane.INFORMATION_MESSAGE);
         }
-    }    
+    }
+
+    private void saveGroceryListAsPDF(String groceryListText) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save Grocery List as PDF");
+        fileChooser.setSelectedFile(new File("grocery_list.pdf"));
     
+        int result = fileChooser.showSaveDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            String filePath = file.getAbsolutePath();
+    
+            if (!filePath.endsWith(".pdf")) {
+                filePath += ".pdf";
+            }
+    
+            try (PDDocument document = new PDDocument()) {
+                PDPage page = new PDPage();
+                document.addPage(page);
+    
+                PDPageContentStream contentStream = new PDPageContentStream(document, page);
+                contentStream.beginText();
+                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+    
+                float yPosition = 750;
+                contentStream.newLineAtOffset(25, yPosition);
+    
+                String[] lines = groceryListText.split("\n");
+    
+                for (String line : lines) {
+                    if (yPosition < 50) { 
+                        contentStream.endText();
+                        contentStream.close();
+                        page = new PDPage();
+                        document.addPage(page);
+                        contentStream = new PDPageContentStream(document, page);
+                        contentStream.beginText();
+                        contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+                        contentStream.newLineAtOffset(25, 750);
+                        yPosition = 750;
+                    }
+    
+                    contentStream.showText(line);
+                    yPosition -= 15; 
+                    contentStream.newLineAtOffset(0, -15);
+                }
+    
+                contentStream.endText();
+                contentStream.close();
+    
+                document.save(filePath);
+    
+                JOptionPane.showMessageDialog(this, "Grocery List saved as PDF.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                System.out.println("PDF Saved to: " + filePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error saving PDF: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
 
     private void updateCalendar(LocalDate date) {
         currentDate = date;
-        calendarPanel.removeAll(); // Clear existing panels
-        selectedMealName = null;
+        calendarPanel.removeAll(); // Clear existing panels | TODO optimize
+        selectedMeal = null;
         selectedDate = null;
     
         YearMonth yearMonth = YearMonth.of(currentDate.getYear(), currentDate.getMonth());
@@ -231,7 +323,7 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
             calendarPanel.add(dayPanel);
         }
     
-        // Add days with meal information
+        // Add current months days
         for (int day = 1; day <= daysInMonth; day++) {
             LocalDate currentDay = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), day);
             JPanel dayPanel = createDayPanel(currentDay, day);
@@ -244,12 +336,25 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         for (int i = 0; i < remainingCells; i++) {
             LocalDate nextMonthDay = nextMonthStart.plusDays(i);
             JPanel dayPanel = createDayPanel(nextMonthDay, nextMonthDay.getDayOfMonth());
-            dayPanel.setBackground(Color.LIGHT_GRAY); // Optional: distinguish next month days
             calendarPanel.add(dayPanel);
         }
     
         calendarPanel.revalidate();
         calendarPanel.repaint();
+    }
+
+    MealPlan current;
+    private Color getMealPlanColor(LocalDate date, MealPlan plan) {
+        if(current != plan){
+            current = plan;
+            mealPlanColorCounter++;
+        }
+
+        Color[] colors = {Color.RED, Color.GREEN, Color.LIGHT_GRAY, Color.ORANGE, Color.CYAN, Color.MAGENTA, Color.PINK, Color.YELLOW};
+    
+        Color mealPlanColor = colors[mealPlanColorCounter % colors.length];
+        
+        return mealPlanColor;
     }
 
     private JPanel createDayPanel(LocalDate date, int day) {
@@ -262,50 +367,60 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         ? date.getMonth().toString().substring(0, 3) + " " + day 
         : String.valueOf(day);
     
-        // Day label
         JLabel dayLabel = new JLabel(dayText, SwingConstants.CENTER);
         dayLabel.setFont(new Font("Arial", Font.BOLD, 16));
         dayLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        dayLabel.setOpaque(true);
+
+        MealPlan plan = findMealPlan(date);
+        if(plan != null){
+            Color mealPlanColor = getMealPlanColor(date, plan);
+            dayLabel.setBackground(mealPlanColor);
+        }else{
+            dayLabel.setBackground(Color.WHITE);
+        }
         
         dayPanel.add(dayLabel, BorderLayout.NORTH);
-    
-        if (mealSchedule.containsKey(date)) {
-            for (String meal : mealSchedule.get(date)) {
-                JLabel mealLabel = new JLabel(meal, SwingConstants.CENTER);
-                mealLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-                mealLabel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
-                mealLabel.setVerticalAlignment(SwingConstants.TOP);
-                mealLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-                mealLabel.setBackground(Color.GRAY);
-                mealLabel.setOpaque(false);
-    
-                // Add mouse listener to meal labels
-                mealLabel.addMouseListener(new java.awt.event.MouseAdapter() {
-                    @Override
-                    public void mouseClicked(java.awt.event.MouseEvent evt) {
-                        selectDayPanel(dayPanel, date);
-                        selectedMealName = meal;
-                        
-                        if (previouslySelectedMeal != null) {
-                            previouslySelectedMeal.setOpaque(false);
-                        }
-                        mealLabel.setOpaque(true);
-                        previouslySelectedMeal = mealLabel;
+
+        if (mealSchedule != null) {
+            for (MealPlan mealPlan : mealSchedule.values()) {
+                if (mealPlan.getMeals().containsKey(date)) {
+                    for (Meal meal : mealPlan.getMeals().get(date)) {
+                        JLabel mealLabel = new JLabel(meal.getName(), SwingConstants.CENTER);
+                        mealLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+                        mealLabel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+                        mealLabel.setVerticalAlignment(SwingConstants.TOP);
+                        mealLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                        mealLabel.setBackground(Color.GRAY);
+                        mealLabel.setOpaque(false);
+            
+                        mealLabel.addMouseListener(new java.awt.event.MouseAdapter() {
+                            @Override
+                            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                                selectDayPanel(dayPanel, date);
+                                selectedMeal = meal;
+                                
+                                if (prevSelectedMealPanel != null) {
+                                    prevSelectedMealPanel.setOpaque(false);
+                                }
+                                mealLabel.setOpaque(true);
+                                prevSelectedMealPanel = mealLabel;
+                            }
+                        });
+                        dayPanel.add(mealLabel);
                     }
-                });
-    
-                dayPanel.add(mealLabel);
+                }
             }
         }
     
-        // Add listener for selecting the whole day panel
+        // Add listener for selecting the whole day panel | TODO shouldn't be two per
         dayPanel.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 selectDayPanel(dayPanel, date);
-                if (previouslySelectedMeal != null) {
-                    previouslySelectedMeal.setOpaque(false);
+                if (prevSelectedMealPanel != null) {
+                    prevSelectedMealPanel.setOpaque(false);
                 }
-                selectedMealName = null;
+                selectedMeal = null;
             }
         });
     
@@ -313,66 +428,90 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
     }
     
     private void selectDayPanel(JPanel panel, LocalDate date) {
-        if (previouslySelectedPanel != null) {
-            previouslySelectedPanel.setBackground(Color.WHITE);
+        if (prevSelectedDayPanel != null) {
+            prevSelectedDayPanel.setBackground(Color.WHITE);
         }
         panel.setBackground(Color.CYAN);
-        previouslySelectedPanel = panel;
+        prevSelectedDayPanel = panel;
         selectedDate = date;
     }
-    
+
     @Override
     public void onRecipeSelected(Recipe recipe) {
         if (selectedDate != null) {
-            addRecipeToDate(selectedDate, recipe.getName());
-            updateCalendar(currentDate); // Refresh calendar to show the updated meals
+            String input = JOptionPane.showInputDialog(
+                this,
+                "Enter serving size for " + recipe.getName() + ":",
+                "Serving Size",
+                JOptionPane.PLAIN_MESSAGE
+            );
+
+            try {
+                int servingSize = Integer.parseInt(input);
+                if (servingSize <= 0) {
+                    throw new NumberFormatException("Serving size must be positive.");
+                }
+
+                Meal meal = new Meal(recipe);
+                meal.setServingSize(servingSize);
+
+                addMealToDate(meal);
+                updateCalendar(currentDate);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Invalid serving size. Please enter a positive integer.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
+        } else {
+            JOptionPane.showMessageDialog(
+                this,
+                "Select a date first before choosing a recipe.",
+                "Missing Selection",
+                JOptionPane.WARNING_MESSAGE
+            );
         }
     }
 
-    public void addRecipeToDate(LocalDate date, String recipe) {
-        mealSchedule.putIfAbsent(date, new ArrayList<>()); // Initialize list if it doesn't exist
-        mealSchedule.get(date).add(recipe); // Add the recipe to the list
+    public void addMealToDate(Meal meal) {
+        if (selectedDate == null) {
+            JOptionPane.showMessageDialog(this, "Select a date first.", "Missing Selection", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        MealPlan mealPlan = findMealPlan(selectedDate);
+        if(mealPlan == null){
+            mealPlan = createMealPlan();
+        }
+    
+        mealPlan.addMeal(selectedDate, meal);
+    
+        updateCalendar(currentDate);
     }
 
-    private void saveMealSchedule() {
-        try {
-            File directory = new File("data");
-            if (!directory.exists()) {
-                directory.mkdirs();
+    private void removeMealFromSelectedDate() {
+        if (selectedDate == null || selectedMeal == null) {
+            JOptionPane.showMessageDialog(this, "Select a date and a meal first.", "Missing Selection", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+    
+        LocalDate weekStart = selectedDate.with(java.time.DayOfWeek.SATURDAY);
+    
+        MealPlan mealPlan = mealSchedule.get(weekStart);
+    
+        if (mealPlan != null) {
+            mealPlan.removeMeal(selectedDate, selectedMeal);
+    
+            if (mealPlan.getMeals().isEmpty()) {
+                mealSchedule.remove(weekStart);
             }
     
-            File file = new File("data/calendar.json");
-            Gson gson = new Gson().newBuilder()
-                .registerTypeAdapter(LocalDate.class, new LocalDateAdapter()) // Adapter for LocalDate
-                .create();
-    
-            try (Writer writer = new FileWriter(file)) {
-                gson.toJson(mealSchedule, writer);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error saving meal schedule.", "Error", JOptionPane.ERROR_MESSAGE);
+            updateCalendar(currentDate);
+        } else {
+            JOptionPane.showMessageDialog(this, "Meal plan not found.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
-    private void loadMealSchedule() {
-        try {
-            File file = new File("data/calendar.json");
-            if (!file.exists()) {
-                return;
-            }
-    
-            Gson gson = new Gson().newBuilder()
-                .registerTypeAdapter(LocalDate.class, new LocalDateAdapter()) // Adapter for LocalDate
-                .create();
-    
-            java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<LocalDate, List<String>>>() {}.getType();
-            try (Reader reader = new FileReader(file)) {
-                mealSchedule = gson.fromJson(reader, type);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error loading meal schedule.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    } 
 }

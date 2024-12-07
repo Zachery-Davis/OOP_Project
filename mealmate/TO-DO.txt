@@ -1,16 +1,26 @@
+Current
+-------------
+Designate cooking days
+
 Improvements
 -----------------
-Classes should only serve a single purpose (file management separation)
+Classes should only serve a single purpose
 Optimize Calendar rendering
 Distinguish extra adjacent days rendered
 Using personal recipes as templates
+Remove recipe from calendar when deleted from collection
+Set meal prep day based of previously selected day
+Calendar shows sections for breakfast lunch dinner
+Sorting recipe names
 
 Features
 ---------------
-Add nutritional data to recipes
-Sorting recipe names
 Designate cooking days
 Recipes are set to a single serving and calendar handles the serving sizes (visualized with ingredient list)
+
+BUG
+--------
+
 
 Grocery List
 ---------------
