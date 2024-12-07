@@ -2,14 +2,8 @@ package com.mealmate;
 
 import javax.swing.*;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
-
 import java.awt.*;
 import java.io.File;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -52,7 +46,7 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent e) {
-                FileManagement.saveToJson(mealSchedule, "data", "calendar.json");
+                saveCalendar();
                 System.exit(0);
             }
         });
@@ -105,8 +99,11 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         JButton deleteMealPlanButton = new JButton("Delete Meal Plan");
         deleteMealPlanButton.addActionListener(e -> deleteMealPlan());
 
-        JButton genGroceryButton = new JButton("Generate Grocery List");
+        JButton genGroceryButton = new JButton("Grocery List");
         genGroceryButton.addActionListener(e -> genGroceryList());
+
+        JButton saveButton = new JButton("Save");
+        saveButton.addActionListener(e -> saveCalendar());
 
         bottomPanel.add(viewRecipeButton);
         bottomPanel.add(addMealButton);
@@ -114,6 +111,7 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         bottomPanel.add(createMealPlanButton);
         bottomPanel.add(deleteMealPlanButton);
         bottomPanel.add(genGroceryButton);
+        bottomPanel.add(saveButton);
 
         // Set layouts for the panels that allow resizing of contents
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
@@ -130,6 +128,11 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
 
         updateCalendar(currentDate);
         setVisible(true);
+    }
+
+    private void saveCalendar(){
+        FileManagement.saveToJson(mealSchedule, "data", "calendar.json");
+        JOptionPane.showMessageDialog(this, "Calendar saved success.", "Saved", JOptionPane.INFORMATION_MESSAGE);
     }
     
     private void viewSelectedMeal() {
@@ -234,70 +237,24 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
                     options[0]);
     
             if (choice == 1) {
-                saveGroceryListAsPDF(groceryListText);
-                return;
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setDialogTitle("Save Grocery List as PDF");
+                fileChooser.setSelectedFile(new File("grocery_list.pdf"));
+            
+                int result = fileChooser.showSaveDialog(this);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File file = fileChooser.getSelectedFile();
+                    String filePath = file.getAbsolutePath();
+            
+                    if (!filePath.endsWith(".pdf")) {
+                        filePath += ".pdf";
+                    }
+            
+                    list.saveToPDF(filePath);
+                }
             }
         } else {
             JOptionPane.showMessageDialog(this, "Please select a day that has a meal plan.", "Missing Selection", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    private void saveGroceryListAsPDF(String groceryListText) {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Save Grocery List as PDF");
-        fileChooser.setSelectedFile(new File("grocery_list.pdf"));
-    
-        int result = fileChooser.showSaveDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
-            String filePath = file.getAbsolutePath();
-    
-            if (!filePath.endsWith(".pdf")) {
-                filePath += ".pdf";
-            }
-    
-            try (PDDocument document = new PDDocument()) {
-                PDPage page = new PDPage();
-                document.addPage(page);
-    
-                PDPageContentStream contentStream = new PDPageContentStream(document, page);
-                contentStream.beginText();
-                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
-    
-                float yPosition = 750;
-                contentStream.newLineAtOffset(25, yPosition);
-    
-                String[] lines = groceryListText.split("\n");
-    
-                for (String line : lines) {
-                    if (yPosition < 50) { 
-                        contentStream.endText();
-                        contentStream.close();
-                        page = new PDPage();
-                        document.addPage(page);
-                        contentStream = new PDPageContentStream(document, page);
-                        contentStream.beginText();
-                        contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
-                        contentStream.newLineAtOffset(25, 750);
-                        yPosition = 750;
-                    }
-    
-                    contentStream.showText(line);
-                    yPosition -= 15; 
-                    contentStream.newLineAtOffset(0, -15);
-                }
-    
-                contentStream.endText();
-                contentStream.close();
-    
-                document.save(filePath);
-    
-                JOptionPane.showMessageDialog(this, "Grocery List saved as PDF.", "Success", JOptionPane.INFORMATION_MESSAGE);
-                System.out.println("PDF Saved to: " + filePath);
-            } catch (IOException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error saving PDF: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
         }
     }
 
@@ -414,7 +371,7 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
             }
         }
     
-        // Add listener for selecting the whole day panel | TODO shouldn't be two per
+        // Add listener for selecting the whole day panel
         dayPanel.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 selectDayPanel(dayPanel, date);
@@ -455,6 +412,7 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
 
                 Meal meal = new Meal(recipe);
                 meal.setServingSize(servingSize);
+                meal.adjustForServing(servingSize);
 
                 addMealToDate(meal);
                 updateCalendar(currentDate);
@@ -499,16 +457,14 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
             JOptionPane.showMessageDialog(this, "Select a date and a meal first.", "Missing Selection", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-    
-        LocalDate weekStart = selectedDate.with(java.time.DayOfWeek.SATURDAY);
-    
-        MealPlan mealPlan = mealSchedule.get(weekStart);
+        
+        MealPlan mealPlan = findMealPlan(selectedDate);
     
         if (mealPlan != null) {
             mealPlan.removeMeal(selectedDate, selectedMeal);
     
             if (mealPlan.getMeals().isEmpty()) {
-                mealSchedule.remove(weekStart);
+                mealSchedule.remove(mealPlan.getStartDate());
             }
     
             updateCalendar(currentDate);

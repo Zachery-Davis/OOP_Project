@@ -34,7 +34,7 @@ public class MealPlan {
     }
 
     public void removeMeal(LocalDate date, Meal meal) {
-        meals.get(date).remove(meal);
+        meals.remove(date);
         groceryList.removeMeal(meal);
     }
 

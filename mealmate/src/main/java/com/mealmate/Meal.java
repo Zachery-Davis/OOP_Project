@@ -18,7 +18,9 @@ public class Meal extends Recipe {
 
     public void setServingSize(int servingSize) {
         this.servingSize = servingSize;
+    }
 
+    public void adjustForServing(int servingSize) {
         this.setCookingTime((int)(this.getCookingTime() * (1 + 0.5 * (servingSize - 1))));
 
         for(Ingredient ingredient : this.getIngredients()){
@@ -30,8 +32,9 @@ public class Meal extends Recipe {
         nutrition.setCarbs(nutrition.getCarbs() * servingSize);
         nutrition.setFat(nutrition.getFat() * servingSize);
         nutrition.setProtein(nutrition.getProtein() * servingSize);
-    }
 
+    }
+    
     @Override
     public String toString() {
         StringBuilder details = new StringBuilder();
