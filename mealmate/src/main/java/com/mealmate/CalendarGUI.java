@@ -9,7 +9,6 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
 import java.awt.*;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -98,7 +97,7 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         });
 
         JButton removeMealButton = new JButton("Remove Meal");
-        removeMealButton.addActionListener(e -> removeMealFromSelectedDate());
+        removeMealButton.addActionListener(e -> removeSelectedMeal());
 
         JButton createMealPlanButton = new JButton("Create Meal Plan");
         createMealPlanButton.addActionListener(e -> createMealPlan());
@@ -307,6 +306,7 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         calendarPanel.removeAll(); // Clear existing panels | TODO optimize
         selectedMeal = null;
         selectedDate = null;
+        mealPlanColorCounter = 0;
     
         YearMonth yearMonth = YearMonth.of(currentDate.getYear(), currentDate.getMonth());
         LocalDate firstOfMonth = yearMonth.atDay(1);
@@ -350,7 +350,7 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
             mealPlanColorCounter++;
         }
 
-        Color[] colors = {Color.RED, Color.GREEN, Color.LIGHT_GRAY, Color.ORANGE, Color.CYAN, Color.MAGENTA, Color.PINK, Color.YELLOW};
+        Color[] colors = {new Color(255, 0, 0, 200), Color.GREEN, new Color(0, 70, 255, 150), Color.ORANGE, new Color(70, 30, 255, 150), Color.PINK, Color.YELLOW};
     
         Color mealPlanColor = colors[mealPlanColorCounter % colors.length];
         
@@ -371,6 +371,7 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
         dayLabel.setFont(new Font("Arial", Font.BOLD, 16));
         dayLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         dayLabel.setOpaque(true);
+        dayLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, dayLabel.getPreferredSize().height));
 
         MealPlan plan = findMealPlan(date);
         if(plan != null){
@@ -481,17 +482,19 @@ public class CalendarGUI extends JFrame implements RecipeSelectionListener {
             return;
         }
 
-        MealPlan mealPlan = findMealPlan(selectedDate);
+        LocalDate date = selectedDate;
+        MealPlan mealPlan = findMealPlan(date);
         if(mealPlan == null){
             mealPlan = createMealPlan();
+            mealSchedule.put(date, mealPlan);
         }
     
-        mealPlan.addMeal(selectedDate, meal);
+        mealPlan.addMeal(date, meal);
     
         updateCalendar(currentDate);
     }
 
-    private void removeMealFromSelectedDate() {
+    private void removeSelectedMeal() {
         if (selectedDate == null || selectedMeal == null) {
             JOptionPane.showMessageDialog(this, "Select a date and a meal first.", "Missing Selection", JOptionPane.INFORMATION_MESSAGE);
             return;
